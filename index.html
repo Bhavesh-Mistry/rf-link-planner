@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+   <meta charset="UTF-8">
+   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+   <title>RF Outdoor Link Planner</title>
+
+   <link rel="stylesheet" href="style.css" />
+   <!-- Leaflet CSS -->
+   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+</head>
+
+<body>
+   <div class="control-panel">
+      <h2>🗼 RF Link Planner</h2>
+      <div class="section">
+         <p><strong>Instructions:</strong><br>
+            Click the map to add a tower.<br>
+            Towers with same frequency can be linked.<br>
+            Click link to show Fresnel zone.</p>
+      </div>
+
+      <div class="section">
+         <h3>Towers</h3>
+         <div id="towerList"></div>
+      </div>
+
+      <div class="section">
+         <h3>Links</h3>
+         <div id="linkList"></div>
+      </div>
+   </div>
+
+   <div id="map"></div>
+
+   <!-- Leaflet JS -->
+   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+   <script src="script.js"></script>
+</body>
+
+</html>
