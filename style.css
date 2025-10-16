@@ -1,72 +1,123 @@
-html,
 body {
-  height: 100%;
   margin: 0;
-  font-family: "Poppins", Arial, sans-serif;
-  background-color: #f6f8fa;
+  font-family: "Segoe UI", sans-serif;
+  display: flex;
+  height: 100vh;
+  background: #f8f9fa;
+}
+
+/* Sidebar */
+#sidebar {
+  width: 280px;
+  background: #ffffff;
+  box-shadow: 2px 0 8px rgba(0, 0, 0, 0.1);
+  padding: 15px;
+  display: flex;
+  flex-direction: column;
+  z-index: 1000;
+}
+
+#sidebar h2 {
+  margin-top: 0;
+  color: #20394d;
+  font-size: 20px;
+  border-bottom: 2px solid #20394d;
+  padding-bottom: 5px;
+}
+
+.form-group {
+  margin-bottom: 10px;
+}
+
+label {
+  font-size: 14px;
+  color: #20394d;
+}
+
+input {
+  width: 90%;
+  padding: 6px;
+  margin-top: 5px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+}
+
+button {
+  padding: 6px 10px;
+  background: #20394d;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  margin-top: 5px;
+}
+
+button:hover {
+  background: #365b81;
+}
+
+#towerList {
+  flex: 1;
+  overflow-y: auto;
+  margin-top: 10px;
+  border-top: 1px solid #ddd;
+  padding-top: 10px;
+}
+
+.tower-item {
+  background: #edf2fa;
+  border-radius: 8px;
+  padding: 10px;
+  margin-bottom: 8px;
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.tower-item button {
+  background: #e74c3c;
+  border: none;
+  color: white;
+  padding: 3px 6px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+  float: right;
+}
+
+.tower-item button:hover {
+  background: #c0392b;
 }
 
 #map {
+  flex: 1;
   height: 100%;
-  width: calc(100% - 260px);
-  position: absolute;
-  right: 0;
-  top: 0;
-  z-index: 1;
 }
 
-.control-panel {
-  width: 260px;
-  height: 100%;
-  background: white;
-  box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
-  padding: 15px;
-  box-sizing: border-box;
-  position: absolute;
+header {
+  position: fixed;
+  width: 100%;
+  text-align: center;
+  background: #20394d;
+  color: white;
+  padding: 8px 0;
+  top: 0;
   left: 0;
-  top: 0;
-  z-index: 999;
-  overflow-y: auto;
+  z-index: 900;
 }
 
-.control-panel h2 {
-  margin-top: 0;
-  font-size: 18px;
-  color: #222;
+.map-container {
+  flex: 1;
+  position: relative;
+  padding: 40px 0 0;
 }
 
-.section {
-  margin-bottom: 20px;
-}
-
-.tower-item,
-.link-item {
-  background: #f2f4f7;
-  margin-bottom: 8px;
-  padding: 6px 8px;
-  border-radius: 6px;
-  font-size: 14px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.delete-btn {
-  background: #ff5555;
+/* Tooltip for link info */
+.leaflet-tooltip.link-info {
+  background: rgba(32, 57, 77, 0.9);
   color: white;
   border: none;
-  border-radius: 4px;
-  padding: 2px 6px;
-  cursor: pointer;
-  font-size: 12px;
-}
-
-.delete-btn:hover {
-  background: #d33;
-}
-
-.fresnel-zone {
-  fill: rgba(0, 120, 255, 0.25);
-  stroke: #0078ff;
-  stroke-dasharray: 4;
+  border-radius: 5px;
+  font-size: 13px;
+  padding: 6px 8px;
+  font-weight: 500;
 }

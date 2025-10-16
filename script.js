@@ -1,138 +1,136 @@
-const map = L.map('map').setView([20.5937, 78.9629], 5);
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-   attribution: '&copy; OpenStreetMap contributors'
+const map = L.map("map").setView([20.5937, 78.9629], 5);
+
+// ✅ Use OpenStreetMap tiles
+L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+   maxZoom: 19,
+   attribution: "© OpenStreetMap",
 }).addTo(map);
 
-const towers = [];
-const links = [];
+let towerMode = false;
+let towers = [];
+let links = [];
 let selectedTower = null;
 
-const towerList = document.getElementById('towerList');
-const linkList = document.getElementById('linkList');
+const addTowerBtn = document.getElementById("addTowerBtn");
+const towerList = document.getElementById("towerList");
 
-map.on('click', (e) => {
-   const towerName = `Tower ${towers.length + 1}`;
-   const freq = prompt(`Enter frequency for ${towerName} (GHz):`, '5');
-   if (!freq) return;
+addTowerBtn.addEventListener("click", () => {
+   towerMode = !towerMode;
+   addTowerBtn.textContent = towerMode ? "Click Map to Add Tower" : "Add Tower Mode";
+});
 
+map.on("click", (e) => {
+   if (!towerMode) return;
+   const freqGHz = parseFloat(document.getElementById("freqInput").value);
    const marker = L.marker(e.latlng, { draggable: true }).addTo(map);
-   marker.bindPopup(`${towerName}<br>Freq: ${freq} GHz`);
-   marker.freq = parseFloat(freq);
-   marker.name = towerName;
-   marker.latlng = e.latlng;
+   marker.bindPopup(`Tower ${towers.length + 1}<br>Freq: ${freqGHz} GHz`).openPopup();
 
-   towers.push(marker);
+   const tower = { id: towers.length + 1, freqGHz, marker, latlng: e.latlng };
+   towers.push(tower);
    updateTowerList();
 
-   marker.on('click', () => handleTowerClick(marker));
-   marker.on('dragend', () => marker.latlng = marker.getLatLng());
+   marker.on("click", () => handleTowerClick(tower));
+   marker.on("dragend", (ev) => {
+      tower.latlng = ev.target.getLatLng();
+      updateTowerList();
+   });
 });
 
 function handleTowerClick(tower) {
    if (!selectedTower) {
       selectedTower = tower;
-      tower.openPopup();
-   } else {
-      if (selectedTower === tower) {
-         selectedTower = null;
-         return;
-      }
-
-      if (selectedTower.freq !== tower.freq) {
-         alert('Frequencies must match to connect towers!');
-         selectedTower = null;
-         return;
-      }
-
-      createLink(selectedTower, tower);
-      selectedTower = null;
+      alert(`Selected Tower ${tower.id}. Now select another tower to connect.`);
+      return;
    }
+
+   if (selectedTower.id === tower.id) {
+      alert("Cannot connect a tower to itself.");
+      selectedTower = null;
+      return;
+   }
+
+   if (selectedTower.freqGHz !== tower.freqGHz) {
+      alert("Frequencies don't match! Cannot connect.");
+      selectedTower = null;
+      return;
+   }
+
+   const link = L.polyline([selectedTower.latlng, tower.latlng], { color: "blue" }).addTo(map);
+
+   // Calculate distance and add hover tooltip
+   const distanceMeters = map.distance(selectedTower.latlng, tower.latlng);
+   const distanceKm = (distanceMeters / 1000).toFixed(2);
+   const tooltipText = `📶 ${selectedTower.freqGHz} GHz<br>📏 ${distanceKm} km`;
+   link.bindTooltip(tooltipText, {
+      permanent: false,
+      direction: "top",
+      className: "link-info",
+      sticky: true,
+   });
+
+   links.push({ tower1: selectedTower, tower2: tower, line: link });
+
+   link.on("click", () => showFresnelZone(selectedTower, tower, link));
+
+   selectedTower = null;
 }
 
-function createLink(t1, t2) {
-   const latlngs = [t1.getLatLng(), t2.getLatLng()];
-   const line = L.polyline(latlngs, { color: '#0078ff', weight: 3 }).addTo(map);
-   line.t1 = t1;
-   line.t2 = t2;
-   line.freq = t1.freq;
-   line.on('click', () => showFresnelZone(line));
-
-   links.push(line);
-   updateLinkList();
-}
-
-function showFresnelZone(line) {
-   const t1 = line.t1.getLatLng();
-   const t2 = line.t2.getLatLng();
-   const fGHz = line.freq;
-   const fHz = fGHz * 1e9;
+function showFresnelZone(t1, t2, line) {
+   const freqHz = t1.freqGHz * 1e9;
    const c = 3e8;
-   const λ = c / fHz;
-   const distance = map.distance(t1, t2);
-   const d1 = distance / 2;
-   const d2 = distance / 2;
-   const r = Math.sqrt((λ * d1 * d2) / (d1 + d2));
+   const lambda = c / freqHz;
 
-   const latMid = (t1.lat + t2.lat) / 2;
-   const lngMid = (t1.lng + t2.lng) / 2;
+   const d = map.distance(t1.latlng, t2.latlng);
+   const d1 = d / 2;
+   const d2 = d / 2;
+   const r = Math.sqrt((lambda * d1 * d2) / (d1 + d2));
 
-   if (line.fresnelLayer) map.removeLayer(line.fresnelLayer);
+   const midpoint = L.latLng(
+      (t1.latlng.lat + t2.latlng.lat) / 2,
+      (t1.latlng.lng + t2.latlng.lng) / 2
+   );
 
-   const ellipse = L.circle([latMid, lngMid], {
+   const ellipse = L.circle(midpoint, {
       radius: r,
-      color: '#0078ff',
-      fillColor: '#0078ff',
-      fillOpacity: 0.25,
-      dashArray: '4'
+      color: "red",
+      fillColor: "rgba(255,0,0,0.2)",
    }).addTo(map);
 
-   line.fresnelLayer = ellipse;
-   ellipse.bindPopup(
-      `<b>Fresnel Zone</b><br>
-         Frequency: ${fGHz} GHz<br>
-         Radius: ${r.toFixed(2)} m<br>
-         Distance: ${distance.toFixed(2)} m`
-   ).openPopup();
-}
-
-function deleteTower(index) {
-   const tower = towers[index];
-   map.removeLayer(tower);
-   towers.splice(index, 1);
-   updateTowerList();
-}
-
-function deleteLink(index) {
-   const line = links[index];
-   if (line.fresnelLayer) map.removeLayer(line.fresnelLayer);
-   map.removeLayer(line);
-   links.splice(index, 1);
-   updateLinkList();
+   setTimeout(() => map.removeLayer(ellipse), 4000);
 }
 
 function updateTowerList() {
-   towerList.innerHTML = '';
-   towers.forEach((t, i) => {
-      const div = document.createElement('div');
-      div.className = 'tower-item';
-      div.innerHTML = `${t.name} (${t.freq} GHz)
-          <button class="delete-btn" onclick="deleteTower(${i})">X</button>`;
+   towerList.innerHTML = "";
+
+   towers.forEach((t) => {
+      const div = document.createElement("div");
+      div.className = "tower-item";
+      div.innerHTML = `
+          <strong>ID:</strong> ${t.id}<br>
+          <strong>Freq:</strong> ${t.freqGHz} GHz<br>
+          <strong>Lat:</strong> ${t.latlng.lat.toFixed(3)}<br>
+          <strong>Lng:</strong> ${t.latlng.lng.toFixed(3)}
+          <button onclick="deleteTower(${t.id})">Delete</button>
+        `;
       towerList.appendChild(div);
    });
 }
 
-function updateLinkList() {
-   linkList.innerHTML = '';
-   links.forEach((l, i) => {
-      const div = document.createElement('div');
-      div.className = 'link-item';
-      const d = map.distance(l.t1.getLatLng(), l.t2.getLatLng()).toFixed(1);
-      div.innerHTML = `${l.t1.name} ↔ ${l.t2.name} (${l.freq} GHz)
-          <button class="delete-btn" onclick="deleteLink(${i})">X</button>`;
-      linkList.appendChild(div);
-   });
-}
+window.deleteTower = function (id) {
+   const tower = towers.find((t) => t.id === id);
+   if (!tower) return;
 
-// expose delete functions globally for inline onclick
-window.deleteTower = deleteTower;
-window.deleteLink = deleteLink;
+   map.removeLayer(tower.marker);
+
+   // Remove all links associated with this tower
+   links = links.filter((link) => {
+      if (link.tower1.id === id || link.tower2.id === id) {
+         map.removeLayer(link.line);
+         return false;
+      }
+      return true;
+   });
+
+   towers = towers.filter((t) => t.id !== id);
+   updateTowerList();
+};
